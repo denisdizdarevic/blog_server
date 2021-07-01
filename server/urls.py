@@ -17,7 +17,15 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework import routers
 
+from blog.views import PostViewSet, UserViewSet, TagViewSet, AttachmentViewSet, CommentViewSet, LikeViewSet
+
 router = routers.DefaultRouter()
+router.register(r'user', UserViewSet)
+router.register(r'post', PostViewSet)
+router.register(r'tag', TagViewSet)
+router.register(r'attachment', AttachmentViewSet)
+router.register(r'comment', CommentViewSet)
+router.register(r'like', LikeViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

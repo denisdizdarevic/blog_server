@@ -17,6 +17,9 @@ class Post(models.Model):
             self.slug = uuid()
         super().save(*args, **kwargs)
 
+    def __str__(self):
+        return f'{self.title} ({self.slug})'
+
 
 class Tag(models.Model):
     name = models.TextField()
