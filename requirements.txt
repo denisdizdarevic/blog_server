@@ -2,3 +2,6 @@ Django~=3.2.5
 djangorestframework~=3.12.4
 django-filter~=2.4.0
 shortuuid~=1.0.1
+drf-extensions~=0.7.0
+pyyaml~=5.4.1
+uritemplate~=3.0.1

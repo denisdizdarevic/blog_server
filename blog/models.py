@@ -20,10 +20,23 @@ class Post(models.Model):
     def __str__(self):
         return f'{self.title} ({self.slug})'
 
+    def get_like(self, user):
+        return self.likes.filter(author__exact=user)
+
+    def set_like(self, user, like):
+        like_query = self.get_like(user)
+        if like == False and like_query.exists():
+            like_query.delete()
+        elif like == True and not like_query.exists():
+            Like.objects.create(author=user, post=self).save()
+
 
 class Tag(models.Model):
     name = models.TextField()
-    post = models.ForeignKey(Post, related_name='tags',  on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, related_name='tags', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
 
 
 class Attachment(models.Model):

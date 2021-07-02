@@ -15,20 +15,25 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework import routers
+from rest_framework.schemas import get_schema_view
+from rest_framework_extensions.routers import ExtendedDefaultRouter
 
-from blog.views import PostViewSet, UserViewSet, TagViewSet, AttachmentViewSet, CommentViewSet, LikeViewSet
+from blog.views import PostViewSet, UserViewSet, TagViewSet, AttachmentViewSet, CommentViewSet
 
-router = routers.DefaultRouter()
+router = ExtendedDefaultRouter()
 router.register(r'user', UserViewSet)
-router.register(r'post', PostViewSet)
-router.register(r'tag', TagViewSet)
-router.register(r'attachment', AttachmentViewSet)
-router.register(r'comment', CommentViewSet)
-router.register(r'like', LikeViewSet)
+postRoute = router.register(r'post', PostViewSet)
+postRoute.register(r'tag', TagViewSet, basename='post-tag', parents_query_lookups=['post'])
+postRoute.register(r'attachment', AttachmentViewSet, basename='post-attachment', parents_query_lookups=['post'])
+postRoute.register(r'comment', CommentViewSet, basename='post-comment', parents_query_lookups=['post'])
 
 urlpatterns = [
     path('', include(router.urls)),
     path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls'))
+    path('api-auth/', include('rest_framework.urls')),
+    path('openapi', get_schema_view(
+        title="Blog Server",
+        description="Blog Server API",
+        version="1.0.0"
+    ), name='openapi-schema'),
 ]

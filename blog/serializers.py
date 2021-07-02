@@ -1,70 +1,69 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from rest_framework import serializers
-from rest_framework.validators import UniqueTogetherValidator
 
-from blog.models import Post, Tag, Attachment, Comment, Like
+from blog.models import Post, Tag, Attachment, Comment
 
 
-class UserSerializer(serializers.HyperlinkedModelSerializer):
+class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
-        fields = ['url', 'username', 'email', 'groups']
+        fields = ['id', 'username', 'email', 'groups']
 
 
-class GroupSerializer(serializers.HyperlinkedModelSerializer):
+class GroupSerializer(serializers.ModelSerializer):
     class Meta:
         model = Group
-        fields = ['url', 'name']
+        fields = ['id', 'name']
 
 
-class TagSerializer(serializers.HyperlinkedModelSerializer):
+class TagSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = '__all__'
+        read_only_fields = ['post']
 
 
-class AttachmentSerializer(serializers.HyperlinkedModelSerializer):
+class AttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attachment
         fields = '__all__'
+        read_only_fields = ['post']
 
 
-class CommentSerializer(serializers.HyperlinkedModelSerializer):
+class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
 
     class Meta:
         model = Comment
         fields = '__all__'
+        read_only_fields = ['post']
 
 
-class LikeSerializer(serializers.HyperlinkedModelSerializer):
-    author = serializers.HyperlinkedRelatedField(read_only=True,
-                                                 view_name='user-detail',
-                                                 default=serializers.CurrentUserDefault())
-
-    class Meta:
-        model = Like
-        fields = '__all__'
-        validators = [
-            UniqueTogetherValidator(
-                queryset=Like.objects.all(),
-                fields=['post', 'author']
-            )
-        ]
-
-
-class PostSerializer(serializers.HyperlinkedModelSerializer):
-    tags = TagSerializer(many=True, read_only=True)
-    comments = CommentSerializer(many=True, read_only=True)
-    attachments = AttachmentSerializer(many=True, read_only=True)
+class PostSerializer(serializers.ModelSerializer):
+    tags = serializers.StringRelatedField(many=True, read_only=True)
+    like_me = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
+    comment_count = serializers.SerializerMethodField()
     author = UserSerializer(read_only=True)
 
     class Meta:
         model = Post
         fields = '__all__'
         read_only_fields = ['author', 'slug']
+        extra_kwargs = {
+            'content': {'write_only': True}
+        }
+
+    def get_like_me(self, obj: Post):
+        return obj.get_like(self.context['request'].user).exists()
+
+    def get_comment_count(self, obj: Post):
+        return obj.comments.count()
 
     def get_like_count(self, obj: Post):
         return obj.likes.count()
+
+
+class LikeSerializer(serializers.Serializer):
+    like = serializers.BooleanField()
