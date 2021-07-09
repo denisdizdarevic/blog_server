@@ -54,3 +54,10 @@ class Comment(models.Model):
 class Like(models.Model):
     author = models.ForeignKey(get_user_model(), null=True, on_delete=models.SET_NULL)
     post = models.ForeignKey(Post, related_name='likes', on_delete=models.CASCADE)
+
+
+class BlogUser(models.Model):
+    class Meta:
+        permissions = (
+            ("is_publicly_listed", "Is publicly listed"),
+        )

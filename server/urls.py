@@ -30,7 +30,7 @@ postRoute.register(r'comment', CommentViewSet, basename='post-comment', parents_
 urlpatterns = [
     path('', include(router.urls)),
     path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls')),
+    path('auth/', include('rest_framework.urls')),
     path('openapi', get_schema_view(
         title="Blog Server",
         description="Blog Server API",

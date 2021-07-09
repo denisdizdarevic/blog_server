@@ -1,9 +1,10 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework.decorators import action
-from rest_framework.permissions import BasePermission, DjangoModelPermissionsOrAnonReadOnly
+from rest_framework.permissions import BasePermission, DjangoModelPermissionsOrAnonReadOnly, SAFE_METHODS, IsAdminUser, \
+    DjangoModelPermissions, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from rest_framework_extensions.mixins import NestedViewSetMixin
 
 from blog.filters import PostFilter
@@ -12,20 +13,40 @@ from blog.serializers import PostSerializer, UserSerializer, CommentSerializer, 
     LikeSerializer
 
 
-class IsOwner(BasePermission):
+class IsOwnerOrReadOnly(BasePermission):
     def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+
         return obj.author == request.user
 
 
-class UserViewSet(viewsets.ModelViewSet):
-    queryset = get_user_model().objects.all().order_by('id')
+class IsPostOwnerOrReadOnly(BasePermission):
+    def has_permission(self, request, view):
+        if view.action == "create":
+            parent_post = Post.objects.get(id=view.kwargs['parent_lookup_post'])
+            return parent_post.author == request.user
+        else:
+            return True
+
+    def has_object_permission(self, request, view, obj):
+        if request.method in SAFE_METHODS:
+            return True
+
+        return obj.post.author == request.user
+
+
+class UserViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = get_user_model().objects.filter(Q(user_permissions__codename="is_publicly_listed") |
+                                               Q(groups__permissions__codename="is_publicly_listed"))\
+                                            .distinct().order_by('id')
     serializer_class = UserSerializer
 
 
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by('-timestamp_created')
     serializer_class = PostSerializer
-    permission_classes = [IsOwner | DjangoModelPermissionsOrAnonReadOnly]
+    permission_classes = [(IsOwnerOrReadOnly & DjangoModelPermissionsOrAnonReadOnly) | IsAdminUser]
     filterset_class = PostFilter
 
     def perform_create(self, serializer):
@@ -35,7 +56,7 @@ class PostViewSet(viewsets.ModelViewSet):
     def content(self, request, pk=None):
         return Response(self.get_object().content)
 
-    @action(detail=True, methods=['post'], serializer_class=LikeSerializer)
+    @action(detail=True, methods=['post'], serializer_class=LikeSerializer, permission_classes=[IsAuthenticated])
     def like(self, request, pk=None):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -46,6 +67,7 @@ class PostViewSet(viewsets.ModelViewSet):
 class TagViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
     queryset = Tag.objects.all().order_by('id')
     serializer_class = TagSerializer
+    permission_classes = [(IsPostOwnerOrReadOnly & DjangoModelPermissionsOrAnonReadOnly) | IsAdminUser]
 
     def perform_create(self, serializer):
         serializer.save(post_id=self.kwargs['parent_lookup_post'])
@@ -54,6 +76,7 @@ class TagViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
 class AttachmentViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
     queryset = Attachment.objects.all().order_by('id')
     serializer_class = AttachmentSerializer
+    permission_classes = [(IsPostOwnerOrReadOnly & DjangoModelPermissionsOrAnonReadOnly) | IsAdminUser]
 
     def perform_create(self, serializer):
         serializer.save(post_id=self.kwargs['parent_lookup_post'])
@@ -62,7 +85,7 @@ class AttachmentViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
 class CommentViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by('timestamp')
     serializer_class = CommentSerializer
-    permission_classes = [IsOwner | DjangoModelPermissionsOrAnonReadOnly]
+    permission_classes = [(IsOwnerOrReadOnly & DjangoModelPermissionsOrAnonReadOnly) | IsAdminUser]
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, post_id=self.kwargs['parent_lookup_post'])

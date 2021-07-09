@@ -6,6 +6,8 @@ from blog.models import Post, Tag, Attachment, Comment
 
 
 class UserSerializer(serializers.ModelSerializer):
+    groups = serializers.StringRelatedField(many=True, read_only=True)
+
     class Meta:
         model = get_user_model()
         fields = ['id', 'username', 'email', 'groups']
@@ -56,7 +58,10 @@ class PostSerializer(serializers.ModelSerializer):
         }
 
     def get_like_me(self, obj: Post):
-        return obj.get_like(self.context['request'].user).exists()
+        if self.context['request'].user.is_authenticated:
+            return obj.get_like(self.context['request'].user).exists()
+        else:
+            return False
 
     def get_comment_count(self, obj: Post):
         return obj.comments.count()
