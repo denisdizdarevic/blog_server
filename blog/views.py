@@ -24,6 +24,8 @@ class IsOwnerOrReadOnly(BasePermission):
 class IsPostOwnerOrReadOnly(BasePermission):
     def has_permission(self, request, view):
         if view.action == "create":
+            if 'parent_lookup_post' not in view.kwargs:
+                return False
             parent_post = Post.objects.get(id=view.kwargs['parent_lookup_post'])
             return parent_post.author == request.user
         else:

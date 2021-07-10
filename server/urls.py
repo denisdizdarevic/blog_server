@@ -19,6 +19,7 @@ from rest_framework.schemas import get_schema_view
 from rest_framework_extensions.routers import ExtendedDefaultRouter
 
 from blog.views import PostViewSet, UserViewSet, TagViewSet, AttachmentViewSet, CommentViewSet
+from server import settings
 
 router = ExtendedDefaultRouter()
 router.register(r'user', UserViewSet)
@@ -34,6 +35,7 @@ urlpatterns = [
     path('openapi', get_schema_view(
         title="Blog Server",
         description="Blog Server API",
-        version="1.0.0"
+        version="1.0.0",
+        url=settings.BASE_URL
     ), name='openapi-schema'),
 ]
