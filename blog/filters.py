@@ -11,5 +11,6 @@ class PostFilter(FilterSet):
             'slug': ['exact'],
             'description': ['contains'],
             'author': ['exact'],
-            'timestamp_created': ['date__gte', 'date__lte']
+            'timestamp_created': ['date__gte', 'date__lte'],
+            'tags__name': ['exact']
         }

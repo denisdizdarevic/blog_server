@@ -3,8 +3,9 @@ from django.db.models import Q
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import BasePermission, DjangoModelPermissionsOrAnonReadOnly, SAFE_METHODS, IsAdminUser, \
-    DjangoModelPermissions, IsAuthenticated
+    DjangoModelPermissions, IsAuthenticated, AllowAny
 from rest_framework.response import Response
+from rest_framework.schemas.openapi import AutoSchema
 from rest_framework_extensions.mixins import NestedViewSetMixin
 
 from blog.filters import PostFilter
@@ -45,6 +46,13 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
 
 
+class TagListView(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+
+    def list(self, request):
+        return Response(Tag.objects.values_list('name', flat=True).distinct().all())
+
+
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by('-timestamp_created')
     serializer_class = PostSerializer
@@ -70,6 +78,7 @@ class TagViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
     queryset = Tag.objects.all().order_by('id')
     serializer_class = TagSerializer
     permission_classes = [(IsPostOwnerOrReadOnly & DjangoModelPermissionsOrAnonReadOnly) | IsAdminUser]
+    schema = AutoSchema(operation_id_base='PostTag')
 
     def perform_create(self, serializer):
         serializer.save(post_id=self.kwargs['parent_lookup_post'])
@@ -79,6 +88,7 @@ class AttachmentViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
     queryset = Attachment.objects.all().order_by('id')
     serializer_class = AttachmentSerializer
     permission_classes = [(IsPostOwnerOrReadOnly & DjangoModelPermissionsOrAnonReadOnly) | IsAdminUser]
+    schema = AutoSchema(operation_id_base='PostAttachment')
 
     def perform_create(self, serializer):
         serializer.save(post_id=self.kwargs['parent_lookup_post'])
@@ -88,6 +98,7 @@ class CommentViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
     queryset = Comment.objects.all().order_by('timestamp')
     serializer_class = CommentSerializer
     permission_classes = [(IsOwnerOrReadOnly & DjangoModelPermissionsOrAnonReadOnly) | IsAdminUser]
+    schema = AutoSchema(operation_id_base='PostComment')
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, post_id=self.kwargs['parent_lookup_post'])
