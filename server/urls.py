@@ -19,10 +19,11 @@ from django.urls import path, include
 from rest_framework.schemas import get_schema_view
 from rest_framework_extensions.routers import ExtendedDefaultRouter
 
-from blog.views import PostViewSet, UserViewSet, CommentViewSet, TagListView
+from blog.views import PostViewSet, UserViewSet, CommentViewSet, TagListView, AuthView
 from server import settings
 
 router = ExtendedDefaultRouter()
+router.register(r'auth', AuthView, basename='auth')
 router.register(r'user', UserViewSet)
 router.register(r'tag', TagListView, basename='tag')
 postRoute = router.register(r'post', PostViewSet)
@@ -32,7 +33,7 @@ urlpatterns = [
     path('', include(router.urls)),
     path('summernote/', include('django_summernote.urls')),
     path('admin/', admin.site.urls),
-    path('auth/', include('rest_framework.urls')),
+    path('api-auth/', include('rest_framework.urls')),
     path('openapi', get_schema_view(
         title="Blog Server",
         description="Blog Server API",

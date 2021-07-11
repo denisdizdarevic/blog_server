@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from django.db.models import Q
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import BasePermission, DjangoModelPermissionsOrAnonReadOnly, SAFE_METHODS, IsAdminUser, \
     DjangoModelPermissions, IsAuthenticated, AllowAny
@@ -67,19 +68,40 @@ class PostViewSet(viewsets.ModelViewSet):
     def content(self, request, pk=None):
         return Response(self.get_object().content)
 
-    @action(detail=True, methods=['post'], serializer_class=LikeSerializer, permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['get'], permission_classes=[IsAuthenticated])
     def like(self, request, pk=None):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.get_object().set_like(request.user, serializer.data.get('like', False))
+        self.get_object().set_like(request.user, not self.get_object().get_like(request.user).exists())
         return Response('ok')
 
 
 class CommentViewSet(NestedViewSetMixin, viewsets.ModelViewSet):
-    queryset = Comment.objects.all().order_by('timestamp')
+    queryset = Comment.objects.all().order_by('-timestamp')
     serializer_class = CommentSerializer
     permission_classes = [(IsOwnerOrReadOnly & DjangoModelPermissionsOrAnonReadOnly) | IsAdminUser]
     schema = AutoSchema(operation_id_base='PostComment')
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user, post_id=self.kwargs['parent_lookup_post'])
+
+
+class AuthView(viewsets.ViewSet):
+    permission_classes = [AllowAny]
+
+    @action(detail=False)
+    def get(self, request):
+        if request.user.is_authenticated:
+            return Response("ok")
+        else:
+            return Response("error", status=status.HTTP_401_UNAUTHORIZED)
+
+    @action(detail=False, methods=['POST'])
+    def register(self, request):
+        if request.user.is_authenticated:
+            return Response("error", status=status.HTTP_400_BAD_REQUEST)
+        try:
+            user = get_user_model().objects.create_user(request.data.get("username"), password=request.data.get("password"))
+            user_group = Group.objects.get(name='User')
+            user.groups.add(user_group)
+            return Response("ok")
+        except:
+            return Response("failed", status=status.HTTP_400_BAD_REQUEST)
