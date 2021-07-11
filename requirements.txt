@@ -1,8 +1,11 @@
 Django~=3.2.5
 djangorestframework~=3.12.4
 django-filter~=2.4.0
-shortuuid~=1.0.1
 drf-extensions~=0.7.0
 pyyaml~=5.4.1
 uritemplate~=3.0.1
 django-cors-headers~=3.7.0
+django-summernote~=0.8.11.6
+django-taggit~=1.5.1
+django-taggit-labels~=0.7.0
+six~=1.16.0

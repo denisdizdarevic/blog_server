@@ -1,24 +1,19 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from shortuuid import uuid
+from taggit.managers import TaggableManager
 
 
 class Post(models.Model):
     title = models.TextField()
-    slug = models.SlugField(unique=True, null=False)
     description = models.TextField()
     content = models.TextField()
     author = models.ForeignKey(get_user_model(), null=True, on_delete=models.SET_NULL)
     timestamp_created = models.DateTimeField(auto_now_add=True)
     timestamp_edited = models.DateTimeField(auto_now=True)
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = uuid()
-        super().save(*args, **kwargs)
+    tags = TaggableManager()
 
     def __str__(self):
-        return f'{self.title} ({self.slug})'
+        return f'{self.id}: {self.title}'
 
     def get_like(self, user):
         return self.likes.filter(author__exact=user)
@@ -31,19 +26,6 @@ class Post(models.Model):
             Like.objects.create(author=user, post=self).save()
 
 
-class Tag(models.Model):
-    name = models.TextField()
-    post = models.ForeignKey(Post, related_name='tags', on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.name
-
-
-class Attachment(models.Model):
-    file = models.FileField(upload_to='uploads/%Y/%m/%d/')
-    post = models.ForeignKey(Post, related_name='attachments', on_delete=models.CASCADE)
-
-
 class Comment(models.Model):
     content = models.TextField()
     author = models.ForeignKey(get_user_model(), null=True, on_delete=models.SET_NULL)
@@ -54,10 +36,3 @@ class Comment(models.Model):
 class Like(models.Model):
     author = models.ForeignKey(get_user_model(), null=True, on_delete=models.SET_NULL)
     post = models.ForeignKey(Post, related_name='likes', on_delete=models.CASCADE)
-
-
-class BlogUser(models.Model):
-    class Meta:
-        permissions = (
-            ("is_publicly_listed", "Is publicly listed"),
-        )

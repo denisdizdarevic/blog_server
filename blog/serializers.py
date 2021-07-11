@@ -1,8 +1,9 @@
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from rest_framework import serializers
+from taggit.serializers import TagListSerializerField
 
-from blog.models import Post, Tag, Attachment, Comment
+from blog.models import Post, Comment
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -19,20 +20,6 @@ class GroupSerializer(serializers.ModelSerializer):
         fields = ['id', 'name']
 
 
-class TagSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Tag
-        fields = '__all__'
-        read_only_fields = ['post']
-
-
-class AttachmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Attachment
-        fields = '__all__'
-        read_only_fields = ['post']
-
-
 class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
 
@@ -43,7 +30,7 @@ class CommentSerializer(serializers.ModelSerializer):
 
 
 class PostSerializer(serializers.ModelSerializer):
-    tags = serializers.StringRelatedField(many=True, read_only=True)
+    tags = TagListSerializerField()
     like_me = serializers.SerializerMethodField()
     like_count = serializers.SerializerMethodField()
     comment_count = serializers.SerializerMethodField()
@@ -52,7 +39,7 @@ class PostSerializer(serializers.ModelSerializer):
     class Meta:
         model = Post
         fields = '__all__'
-        read_only_fields = ['author', 'slug']
+        read_only_fields = ['author']
         extra_kwargs = {
             'content': {'write_only': True}
         }

@@ -13,24 +13,24 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.schemas import get_schema_view
 from rest_framework_extensions.routers import ExtendedDefaultRouter
 
-from blog.views import PostViewSet, UserViewSet, TagViewSet, AttachmentViewSet, CommentViewSet, TagListView
+from blog.views import PostViewSet, UserViewSet, CommentViewSet, TagListView
 from server import settings
 
 router = ExtendedDefaultRouter()
 router.register(r'user', UserViewSet)
 router.register(r'tag', TagListView, basename='tag')
 postRoute = router.register(r'post', PostViewSet)
-postRoute.register(r'tag', TagViewSet, basename='post-tag', parents_query_lookups=['post'])
-postRoute.register(r'attachment', AttachmentViewSet, basename='post-attachment', parents_query_lookups=['post'])
 postRoute.register(r'comment', CommentViewSet, basename='post-comment', parents_query_lookups=['post'])
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('summernote/', include('django_summernote.urls')),
     path('admin/', admin.site.urls),
     path('auth/', include('rest_framework.urls')),
     path('openapi', get_schema_view(
@@ -39,4 +39,4 @@ urlpatterns = [
         version="1.0.0",
         url=settings.BASE_URL
     ), name='openapi-schema'),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
