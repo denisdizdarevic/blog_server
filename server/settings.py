@@ -56,16 +56,10 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8000",
-    "http://localhost:8081"
-]
+
 X_FRAME_OPTIONS = "SAMEORIGIN"
 
 ROOT_URLCONF = 'server.urls'
-
-BASE_URL = "http://127.0.0.1:8000/"
 
 TEMPLATES = [
     {
@@ -138,6 +132,8 @@ STATIC_URL = '/static/'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')
+
+CLIENT_ROOT = os.path.join(BASE_DIR, 'client/')
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/3.2/ref/settings/#default-auto-field

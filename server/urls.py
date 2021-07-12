@@ -15,7 +15,8 @@ Including another URLconf
 """
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from django.views.static import serve
 from rest_framework.schemas import get_schema_view
 from rest_framework_extensions.routers import ExtendedDefaultRouter
 
@@ -29,15 +30,20 @@ router.register(r'tag', TagListView, basename='tag')
 postRoute = router.register(r'post', PostViewSet)
 postRoute.register(r'comment', CommentViewSet, basename='post-comment', parents_query_lookups=['post'])
 
+import mimetypes
+mimetypes.add_type("application/javascript", ".js", True)
+
 urlpatterns = [
-    path('', include(router.urls)),
+    path('api/', include(router.urls)),
     path('summernote/', include('django_summernote.urls')),
     path('admin/', admin.site.urls),
     path('api-auth/', include('rest_framework.urls')),
-    path('openapi', get_schema_view(
+    path('api/openapi', get_schema_view(
         title="Blog Server",
         description="Blog Server API",
         version="1.0.0",
-        url=settings.BASE_URL
     ), name='openapi-schema'),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    re_path('^media(?P<path>.*)/$', serve, kwargs={'document_root': settings.MEDIA_ROOT}),
+    re_path('^(?P<path>.*)/$', serve, kwargs={'document_root': settings.CLIENT_ROOT}),
+    path('', serve, kwargs={'path': 'index.html', 'document_root': settings.CLIENT_ROOT}),
+]
