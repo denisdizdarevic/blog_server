@@ -39,7 +39,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework',
-    'admin_permissions',
     'django_summernote',
     'taggit',
     'taggit_labels',
